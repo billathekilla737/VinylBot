@@ -1,8 +1,10 @@
-from discord import app_commands # type: ignore
-from discord.ext import commands # type: ignore
-from Assets.Utilities import Parse_Private
+from discord import app_commands
+from discord.ext import commands
+from Assets.Utilities import *
 from Assets.VinylScraper import *
-import pytz
+import discord 
+import asyncio
+
 
 
 
@@ -11,20 +13,15 @@ import pytz
 def run_discord_bot():
 
     ###########Initialize Bot####################################
-    #scrape_race_info()                                         #
     token, URL = Parse_Private()                                #
     #Set the bot's status                                       #
-    tree = app_commands.CommandTree(client)                     #
+    intents = discord.Intents.all()                             #
     client = commands.Bot(command_prefix='/', intents=intents)  #
-    #bot = commands.Bot(command_prefix='/', intents=intents)    #
-    nameList, roleList = Grab_Files()                           #
-    RacesJson = 'Daddy-Bot-env/Assets/F1Information.json'       #
-    url = 'https://www.reddit.com/r/VinylReleases/new/'         #
     #############################################################
 
 
 
-
+    @client.event
     async def on_ready():
             #Variable Initialization
             #####################################################################
@@ -33,17 +30,14 @@ def run_discord_bot():
 
             
             while True:
-                  pass
-                  await asyncio.sleep(45)
+                recent_posts = get_recent_posts(50)
+                print(recent_posts)
 
 
 
 
 
-
-
-
-
+                await asyncio.sleep(1800)
 
 
 
