@@ -50,18 +50,20 @@ def Parse_Reddit_Secrets():
 def get_api_key_from_file():
     api_key = None
     try:
-        with open('Assets/Keys/OpenAI_Priavate.txt', 'r') as file:
+        with open('Assets\Keys\OpenAI_Private.txt', 'r') as file:
             for line in file:
                 if line.startswith('APIKEY'):
-                    api_key = line.split('=')[1].strip()  # Splits the string and trims whitespace
+                    # Updated to strip whitespace and quotation marks from both ends
+                    api_key = line.split('=')[1].strip(" \n\r'\"")
                     break  # Exits the loop once the API key is found
     except FileNotFoundError:
-        print(f"The file {file_path} was not found.")
+        print("The file was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
     return api_key
 
-# Example usage
-file_path = 'path/to/your/file.txt'
-api_key = get_api_key_from_file()
-print(api_key)
+
+
+def preprocess_input(posts):
+    titles = [f"- {post['title']}" for post in posts]
+    return "\n".join(titles)

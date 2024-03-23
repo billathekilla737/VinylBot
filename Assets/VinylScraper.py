@@ -1,5 +1,9 @@
 import praw
-from Utilities import Parse_Reddit_Secrets
+from Assets.Utilities import *
+import openai
+
+
+openai.api_key = get_api_key_from_file()
 ViewedPostsFile = 'Assets/ViewedPosts.txt'
 ViewedPosts = set()
 
@@ -7,7 +11,7 @@ try:
     with open(ViewedPostsFile, 'r') as f:
         ViewedPosts = set(f.read().splitlines())
 except FileNotFoundError:
-    print('Error: File not found.')
+    print('Error: File not found. Will Make a New One.')
 
 def get_recent_posts(amount):
     # Variable Initialization
@@ -16,17 +20,56 @@ def get_recent_posts(amount):
     print(client_id, client_secret, user_agent)
     reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent)
     subreddit = reddit.subreddit('vinylreleases')
-    posts = []
+    postList = []
 
     for post in subreddit.new(limit=amount):  # 'limit' specifies how many posts to fetch
         #Check each line of to see if the postID is unique
         if post.id not in ViewedPosts:
             #If the postID is unique, add it to the list of posts
-            posts.append({'title': post.title, 'url': post.url})
+            postList.append({'title': post.title, 'url': post.url})
             #Add the postID to the list of viewed posts
             ViewedPosts.add(post.id)
             #Write the postID to the file
             with open(ViewedPostsFile, 'a') as f:
                 f.write(post.id + '\n')
 
-    return posts
+    return postList
+
+
+def RemoveDuplicates(posts, GPT_Prompt, model):
+    # Preprocess the list into a string of titles
+    preprocessed_titles = preprocess_input(posts)
+    
+    # Combine your task description with the preprocessed titles
+    full_prompt = f"{GPT_Prompt}\n\nSubreddit Posts:\n{preprocessed_titles}\n\n Only Return Processed list as 'Processed List:'"
+    # Call GPT-3.5 Turbo
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[{"role": "user", "content": full_prompt}],
+        temperature=0.7,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        
+    )
+    return response.choices[0].message['content'].strip()
+
+
+def SearchArtist(list1, list2, model, prompt):
+    # Preprocess the lists into a string of titles
+    preprocessed_list1 = preprocess_input(list1)
+    preprocessed_list2 = preprocess_input(list2)
+    
+    # Combine your task description with the preprocessed titles
+    full_prompt = f"{prompt}\n\nList 1:\n{preprocessed_list1}\n\nList 2:\n{preprocessed_list2}\n\nMatches:"
+    # Call GPT-3.5 Turbo
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[{"role": "user", "content": full_prompt}],
+        temperature=0.7,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        
+    )
+    return response.choices[0].message['content'].strip()
