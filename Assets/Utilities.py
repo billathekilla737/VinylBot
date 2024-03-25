@@ -62,8 +62,9 @@ def get_api_key_from_file():
         print(f"An error occurred: {e}")
     return api_key
 
-
-
 def preprocess_input(posts):
     titles = [f"- {post['title']}" for post in posts]
     return "\n".join(titles)
+
+def convert_to_list(multi_line_string):
+    return multi_line_string.split('\n')

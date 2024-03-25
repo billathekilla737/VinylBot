@@ -38,7 +38,9 @@ def get_recent_posts(amount):
 
 def RemoveDuplicates(posts, GPT_Prompt, model):
     # Preprocess the list into a string of titles
+    #print('Posts:\n' + str(posts))
     preprocessed_titles = preprocess_input(posts)
+    
     
     # Combine your task description with the preprocessed titles
     full_prompt = f"{GPT_Prompt}\n\nSubreddit Posts:\n{preprocessed_titles}\n\n Only Return Processed list as 'Processed List:'"
@@ -57,8 +59,11 @@ def RemoveDuplicates(posts, GPT_Prompt, model):
 
 def SearchArtist(list1, list2, model, prompt):
     # Preprocess the lists into a string of titles
-    preprocessed_list1 = preprocess_input(list1)
-    preprocessed_list2 = preprocess_input(list2)
+    #print('List 1:\n' + str(list1))
+    #print('List 2:\n' + str(list2))
+    #print('End of Lists')
+    preprocessed_list1 = list1
+    preprocessed_list2 = list2
     
     # Combine your task description with the preprocessed titles
     full_prompt = f"{prompt}\n\nList 1:\n{preprocessed_list1}\n\nList 2:\n{preprocessed_list2}\n\nMatches:"
