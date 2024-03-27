@@ -3,6 +3,7 @@ from Assets.Utilities import *
 import openai
 
 
+
 openai.api_key = get_api_key_from_file()
 ViewedPostsFile = 'Assets/ViewedPosts.txt'
 ViewedPosts = set()
@@ -58,10 +59,15 @@ def RemoveDuplicates(posts, GPT_Prompt, model):
 
 
 def SearchArtist(list1, list2, model, prompt):
-    # Preprocess the lists into a string of titles
-    #print('List 1:\n' + str(list1))
-    #print('List 2:\n' + str(list2))
-    #print('End of Lists')
+    #Remove 'Processed List:' from the beginning of the string
+    if str(list2).startswith('Processed List:'):
+        list2 = str(list2)[15:]
+
+    print('List 1:' + str(list1))
+    print('List 2:' + str(list2))
+    print('End of Lists')
+    
+
     preprocessed_list1 = list1
     preprocessed_list2 = list2
     

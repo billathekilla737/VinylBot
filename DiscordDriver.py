@@ -7,6 +7,8 @@ import asyncio
 import json
 import tabulate
 import warnings
+from datetime import datetime
+from asyncpraw import Reddit
 
 #Commented Out for Testing Purposes
 ##########################################################################################################
@@ -32,23 +34,8 @@ paying close attention to the details of each entry, as there may be slight vari
 Use your understanding of artist names and album titles to make accurate comparisons even when faced with minor differences in spelling or formatting.
 """
 
-# Dupes_Removed = RemoveDuplicates(get_recent_posts(30), Duplicate_Removal_Prompt, model)
-# Dupe_Removed_List = convert_to_list(Dupes_Removed)
-
-# # Ensure that `posts` is a list of dictionaries
-# if isinstance(Dupe_Removed_List, str):
-#     Dupe_Removed_List = [{"title": Dupe_Removed_List}]
-
-# #Load the JSON data from 'SearchParms.json'
-# with open('Assets/SearchParams.json', 'r') as file:
-#     data = json.load(file)
-
-# #Dump all the artist into a python list
-# all_artists = [artist for user_likes in data.values() for artist in user_likes]
-
-# print(SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt))
-
-
+#TODO: Make the ViewedPost.txt a JSON file so that it will pursist through github pushes
+#TODO: Make it so that when I pass the artist list to CHATGPT, the User who likes it is passed too. That way I can say "Hey @User, I found a match for you"
 
 def run_discord_bot():
     token, URL = Parse_Private()
@@ -77,13 +64,15 @@ def run_discord_bot():
             Dupes_Removed = RemoveDuplicates(get_recent_posts(50), Duplicate_Removal_Prompt, model)
             Dupe_Removed_List = convert_to_list(Dupes_Removed)
             
-            # Search for any matches with liked artists in the SearchParams.json file
-            # Load the JSON data from 'SearchParams.json'
+            #We recheck the file for the updated list of artists
             with open('Assets/SearchParams.json', 'r') as file:
                 data = json.load(file)
             
             # Dump all the artist into a python list
             all_artists = [artist for user_likes in data.values() for artist in user_likes]
+
+            print(all_artists)
+            print(Dupe_Removed_List)
             
             # Perform the search
             matches = SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt)
@@ -94,9 +83,13 @@ def run_discord_bot():
                 await Vinylchannel.send(matches)
             else:
                 print("No matches found.")
+            
 
-            # Sleep for 30 minutes
-            await asyncio.sleep(1800)
+            #print the current Hour and Minute
+            print(datetime.now().strftime("%H:%M"))
+
+            # Sleep for 45
+            await asyncio.sleep(45 * 60)
 
 
 
