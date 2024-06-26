@@ -37,6 +37,7 @@ Use your understanding of artist names and album titles to make accurate compari
 #TODO: Make it so that when I pass the artist list to CHATGPT, the User who likes it is passed too. That way I can say "Hey @User, I found a match for you"
 
 def run_discord_bot():
+
     token, URL = Parse_Private()
     intents = discord.Intents.all()
     client = discord.Client(command_prefix='/', intents=intents)
@@ -47,6 +48,10 @@ def run_discord_bot():
     
     @client.event
     async def on_ready():
+        current = "Init#1"
+        last = "Init#2"
+        postSearchAmount = 50
+        MinutesTillSearch = 45
         Vinylchannel = client.get_channel(1217119273684701354)
         print(f'We have logged in as {client.user}')
         await client.change_presence(activity=discord.Game("with your mom's record player"))
@@ -59,10 +64,11 @@ def run_discord_bot():
         
 
         while True:
-            # Every 30 minutes we will check for 50 new posts
-            Dupes_Removed = RemoveDuplicates(get_recent_posts(50), Duplicate_Removal_Prompt, model)
+            # Every X minutes we will check for 50 new posts
+            Dupes_Removed = RemoveDuplicates(get_recent_posts(postSearchAmount), Duplicate_Removal_Prompt, model)
             Dupe_Removed_List = convert_to_list(Dupes_Removed)
-            
+            current = Dupe_Removed_List
+
             #We recheck the file for the updated list of artists
             with open('Assets/SearchParams.json', 'r') as file:
                 data = json.load(file)
@@ -74,21 +80,26 @@ def run_discord_bot():
             print(Dupe_Removed_List)
             
             # Perform the search
-            matches = SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt)
+            if current != last:
+                try:
+                    matches = SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt)
+                except Exception as e:
+                    print(e)
+                    matches = "API Error. Please try again later."
+            else:
+                continue
+
             #If matches is == to "No matches found." then we will not send a message
             if matches != "No matches found.":
                 print(matches)
+                last = current
                 #Send the message to the Vinylchannel
                 await Vinylchannel.send(matches)
             else:
                 print("No matches found.")
-            
 
-            #print the current Hour and Minute
-            print(datetime.now().strftime("%H:%M"))
-
-            # Sleep for 45
-            await asyncio.sleep(45 * 60)
+            # Sleep for X minutes
+            await asyncio.sleep(MinutesTillSearch * 60)
 
 
 
@@ -104,17 +115,17 @@ def run_discord_bot():
         #Check if the user is already in the JSON file
         if user.name in data:
             if artist in data[user.name]:
-                await interaction.response.send_message(f"{user.name} already likes {artist}")
+                await interaction.response.send_message(f"{user.name} already likes {artist}", ephemeral=True)
             else:
                 data[user.name].append(artist)
                 with open('Assets/SearchParams.json', 'w') as file:
                     json.dump(data, file)
-                await interaction.response.send_message(f"{user.name} has added {artist} to the list of liked artists")
+                await interaction.response.send_message(f"{user.name} has added {artist} to the list of liked artists", ephemeral=True)
         else:
             data[user.name] = [artist]
             with open('Assets/SearchParams.json', 'w') as file:
                 json.dump(data, file)
-            await interaction.response.send_message(f"{user.name} has added {artist} to the list of liked artists")
+            await interaction.response.send_message(f"{user.name} has added {artist} to the list of liked artists", ephemeral=True)
 
 
     @tree.command(name="removeartist", description="Remove an artist from your liked artists list")
@@ -130,11 +141,11 @@ def run_discord_bot():
                 data[user.name].remove(artist)
                 with open('Assets/SearchParams.json', 'w') as file:
                     json.dump(data, file)
-                await interaction.response.send_message(f"{artist} has been removed from the list of liked artists")
+                await interaction.response.send_message(f"{artist} has been removed from the list of liked artists", ephemeral=True)
             else:
-                await interaction.response.send_message(f"{user.name} does not like {artist}")
+                await interaction.response.send_message(f"{user.name} does not like {artist}", ephemeral=True)
         else:
-            await interaction.response.send_message(f"{user.name} has not liked any artists yet")
+            await interaction.response.send_message(f"{user.name} has not liked any artists yet", ephemeral=True)
 
     @tree.command(name="listartists", description="List all the artists you like")
     async def List_User_Liked_Artists(interaction: discord.Interaction):
