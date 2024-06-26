@@ -8,7 +8,6 @@ import json
 import tabulate
 import warnings
 from datetime import datetime
-from asyncpraw import Reddit
 
 #Commented Out for Testing Purposes
 ##########################################################################################################
@@ -146,9 +145,9 @@ def run_discord_bot():
             data = json.load(file)
         #Check if the user is already in the JSON file
         if user.name in data:
-            await interaction.response.send_message(f"{user.name} likes the following artists: {', '.join(data[user.name])}")
+            await interaction.response.send_message(f"{user.name} likes the following artists: {', '.join(data[user.name])}", ephemeral=True)
         else:
-            await interaction.response.send_message(f"{user.name} has not liked any artists yet")
+            await interaction.response.send_message(f"{user.name} has not liked any artists yet", ephemeral=True)
     
        
 
