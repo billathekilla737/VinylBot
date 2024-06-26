@@ -1,6 +1,6 @@
 def Parse_Private():
     try:
-        with open("Assets/Keys/Private.txt", "r") as tokenFile:
+        with open(r"Assets/Keys/Private.txt", "r") as tokenFile:
             lines = tokenFile.readlines()
         
         # Initialize a dictionary to hold the values
@@ -35,7 +35,7 @@ def Parse_Reddit_Secrets():
         - tuple: A tuple containing the client_id, client_secret, and user_agent.
         """
         credentials = {'client_id': None, 'client_secret': None, 'user_agent': None}
-        with open('Assets/Keys/API_Private.txt', 'r') as file:
+        with open(r'Assets/Keys/API_Private.txt', 'r') as file:
             for line in file:
                 if line.startswith('client_id'):
                     credentials['client_id'] = line.split('=')[1].strip().strip("'")
@@ -50,7 +50,7 @@ def Parse_Reddit_Secrets():
 def get_api_key_from_file():
     api_key = None
     try:
-        with open('Assets\Keys\OpenAI_Private.txt', 'r') as file:
+        with open(r'Assets/Keys/OpenAI_Private.txt', 'r') as file:
             for line in file:
                 if line.startswith('APIKEY'):
                     # Updated to strip whitespace and quotation marks from both ends

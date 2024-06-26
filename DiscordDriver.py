@@ -65,9 +65,10 @@ def run_discord_bot():
 
         while True:
             # Every X minutes we will check for 50 new posts
-            Dupes_Removed = RemoveDuplicates(get_recent_posts(postSearchAmount), Duplicate_Removal_Prompt, model)
-            Dupe_Removed_List = convert_to_list(Dupes_Removed)
-            current = Dupe_Removed_List
+            #TODO Remove Only call the GPT API if there are new posts to check I.E. get_recent_posts() != last
+            #Dupes_Removed = RemoveDuplicates(get_recent_posts(postSearchAmount), Duplicate_Removal_Prompt, model)
+            #Dupe_Removed_List = convert_to_list(Dupes_Removed)
+            current = get_recent_posts(postSearchAmount)
 
             #We recheck the file for the updated list of artists
             with open('Assets/SearchParams.json', 'r') as file:
@@ -76,12 +77,12 @@ def run_discord_bot():
             # Dump all the artist into a python list
             all_artists = [artist for user_likes in data.values() for artist in user_likes]
 
-            print(all_artists)
-            print(Dupe_Removed_List)
             
             # Perform the search
             if current != last:
                 try:
+                    Dupes_Removed = RemoveDuplicates(current, Duplicate_Removal_Prompt, model)
+                    Dupe_Removed_List = convert_to_list(Dupes_Removed)
                     matches = SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt)
                 except Exception as e:
                     print(e)
@@ -99,7 +100,8 @@ def run_discord_bot():
                 print("No matches found.")
 
             # Sleep for X minutes
-            await asyncio.sleep(MinutesTillSearch * 60)
+            #await asyncio.sleep(MinutesTillSearch * 60)
+            await asyncio.sleep(30)
 
 
 
