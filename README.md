@@ -36,25 +36,29 @@ Naming Conventions for the API key files are listed below in step 3 of installat
 
 3. To set up your API keys and tokens, create 3 separate .txt files in the 'VinylBot\Assets\Keys' directory with the following structure:
 
-Reddit API Key: 
-    -File Named: "API_Private.txt" 
-    -File Layout: 
-        client_id = 'YourId' 
-        client_secret = 'YourAPIKey' 
-        user_agent = 'YourUserAgent' 
+    **Reddit API Key:**
+    - File Named: `API_Private.txt`
+    - File Layout:
+        ```plaintext
+        client_id = 'YourId'
+        client_secret = 'YourAPIKey'
+        user_agent = 'YourUserAgent'
+        ```
 
-        
-Open AI API Key: 
-    -File Named: "OpenAI_Private.txt" 
-    -File Layout: 
-        APIKEY = 'YourAPIKey' 
+    **Open AI API Key:**
+    - File Named: `OpenAI_Private.txt`
+    - File Layout:
+        ```plaintext
+        APIKEY = 'YourAPIKey'
+        ```
 
-
-Discord API Key:  
-    -File Named: "Private.txt" 
-    -File Layout: 
-        Token = YourToken 
-        URL = 'YourDiscordUrl' 
+    **Discord API Key:**
+    - File Named: `Private.txt`
+    - File Layout:
+        ```plaintext
+        Token = YourToken
+        URL = 'YourDiscordUrl'
+        ```
 
 
 4. Run the bot:
