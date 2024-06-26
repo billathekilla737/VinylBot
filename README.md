@@ -6,16 +6,18 @@ This is a Discord bot created to help users find particular songs and artists th
 
 ## Features
 
-- **Search Posts**: The bot searches for vinyl album releases on r/vinyl and identifies unique releases.
-- **Artist Matching**: Compares the list of liked artists with the titles of recent posts to find matches.
-- **User Commands**: Allows users to add, remove, and list their liked artists.
+- **Search Posts**: The bot searches for vinyl album releases on r/vinyl and identifies unique releases by comparing the titles. This can adequately discern between similar printings that might be for the same album but different publishers/vinyl color.
+- **Artist Matching**: Compares your list of liked artists with the titles of recent posts to find matches. The bot by default runs this matching every 30 minutes to find new posts. The frequency can be edited to your preference.
+- **User Commands**: Allows users to add, remove, and list their liked artists. The list will be unique to each person and currently the artists added via discord command will be ethereal (not shown to other's in the channel).
 
 ## Requirements
 
-To run this bot, you will need the following API keys:
-- Reddit API key
-- OpenAI API key (version <=28)
-- Discord token
+To run this bot, you will need the following API keys. Later we will save them to 'VinylBot\Assets\Keys':
+- Reddit API key : https://www.reddit.com/wiki/api/ 
+- OpenAI API key (version <=28) https://openai.com/api/pricing/#language-models
+- Discord token https://openai.com/api/pricing/#language-models
+
+Naming Conventions for the API key files are listed below in step 3 of installation
 
 ## Installation
 
@@ -32,15 +34,28 @@ To run this bot, you will need the following API keys:
     pip install discord.py tabulate openai==0.27.2
     ```
 
-3. Set up your API keys and tokens. Create a file named `private.json` in the `Assets` directory with the following structure:
+3. To set up your API keys and tokens, create 3 separate .txt files in the 'VinylBot\Assets\Keys' directory with the following structure:
 
-    ```json
-    {
-      "reddit_api_key": "your_reddit_api_key",
-      "openai_api_key": "your_openai_api_key",
-      "discord_token": "your_discord_token"
-    }
-    ```
+Reddit API Key: 
+    File Named: "API_Private.txt"
+    File Layout:
+        client_id = 'YourId'
+        client_secret = 'YourAPIKey'
+        user_agent = 'YourUserAgent'
+
+        
+Open AI API Key:
+    File Named: "OpenAI_Private.txt"
+    File Layout:
+        APIKEY = 'YourAPIKey'
+
+
+Discord API Key: 
+    File Named: "Private.txt"
+    File Layout:
+        Token = YourToken
+        URL = 'YourDiscordUrl'
+
 
 4. Run the bot:
 
