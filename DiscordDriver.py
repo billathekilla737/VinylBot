@@ -3,15 +3,13 @@ from discord import app_commands
 from Assets.Utilities import *
 from Assets.VinylScraper import *
 import discord 
-
 import json
 import tabulate
-import warnings
 from datetime import datetime
 
 #Commented Out for Testing Purposes
 ##########################################################################################################
-warnings.simplefilter("ignore", UserWarning)
+
 #model  = "gpt-3.5-turbo-0125"
 model = "gpt-4o" #Newer More Expensive Model, Higher Accuracy
 Duplicate_Removal_Prompt = """
@@ -46,13 +44,16 @@ def run_discord_bot():
 
     @client.event
     async def DelayedLoop(Vinylchannel):
-        print("Delayed Loop Initiated")
         PostList = "Init#1"
         postSearchAmount = 50 #Post
         MinutesTillSearch = 10 #Minutes
         while True:
-            PostList = get_recent_posts(postSearchAmount)
-            #We recheck the file for the updated list of artists
+            try:
+                PostList = await get_recent_posts(postSearchAmount)  # Await the async function
+            except Exception as e:
+                print(e)
+                PostList = []
+
             with open('Assets/SearchParams.json', 'r') as file:
                 data = json.load(file)
             
@@ -104,6 +105,7 @@ def run_discord_bot():
         
         Vinylchannel = client.get_channel(1217119273684701354)
         Testchannel = client.get_channel(1115817757267730533)
+        Channel = Vinylchannel
         print(f'We have logged in as {client.user}')
         await client.change_presence(activity=discord.Game("with your mom's record player"))
 
@@ -112,7 +114,7 @@ def run_discord_bot():
             print(f"Synced {len(synced)} commands")
         except Exception as e:
             print(e)
-        client.loop.create_task(DelayedLoop(Vinylchannel))
+        client.loop.create_task(DelayedLoop(Channel))
         
 
     #Slash Commands
@@ -192,18 +194,3 @@ def run_discord_bot():
 
 if __name__ == "__main__":
     run_discord_bot()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
