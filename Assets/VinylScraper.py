@@ -18,26 +18,27 @@ async def get_recent_posts(amount):
     #####################################################################
     client_id, client_secret, user_agent = Parse_Reddit_Secrets()
     
-    reddit = asyncpraw.Reddit(
+    # Using 'async with' to ensure the Reddit instance is properly closed
+    async with asyncpraw.Reddit(
         client_id=client_id,
         client_secret=client_secret,
         user_agent=user_agent
-    )
-    subreddit = await reddit.subreddit('vinylreleases')
-    postList = []
+    ) as reddit:
+        subreddit = await reddit.subreddit('vinylreleases')
+        postList = []
 
-    async for post in subreddit.new(limit=amount):  # 'limit' specifies how many posts to fetch
-        # Check each line to see if the postID is unique
-        if post.id not in ViewedPosts:
-            # If the postID is unique, add it to the list of posts
-            postList.append({'title': post.title, 'url': post.url})
-            # Add the postID to the list of viewed posts
-            ViewedPosts.add(post.id)
-            # Write the postID to the file
-            with open(ViewedPostsFile, 'a') as f:
-                f.write(post.id + '\n')
+        async for post in subreddit.new(limit=amount):  # 'limit' specifies how many posts to fetch
+            # Check each line to see if the postID is unique
+            if post.id not in ViewedPosts:
+                # If the postID is unique, add it to the list of posts
+                postList.append({'title': post.title, 'url': post.url})
+                # Add the postID to the list of viewed posts
+                ViewedPosts.add(post.id)
+                # Write the postID to the file
+                with open(ViewedPostsFile, 'a') as f:
+                    f.write(post.id + '\n')
 
-    return postList
+        return postList
 
 
 def RemoveDuplicates(posts, GPT_Prompt, model):
