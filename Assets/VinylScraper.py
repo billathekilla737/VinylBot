@@ -63,9 +63,9 @@ def SearchArtist(list1, list2, model, prompt):
     if str(list2).startswith('Processed List:'):
         list2 = str(list2)[15:]
 
-    print('List 1:' + str(list1))
-    print('List 2:' + str(list2))
-    print('End of Lists')
+    #print('Liked List:' + str(list1))
+    #print('Reddit List:' + str(list2))
+    # print('End of Lists')
     
 
     preprocessed_list1 = list1

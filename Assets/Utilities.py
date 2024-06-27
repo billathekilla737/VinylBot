@@ -1,3 +1,4 @@
+import asyncio
 def Parse_Private():
     try:
         with open(r"Assets/Keys/Private.txt", "r") as tokenFile:

@@ -3,7 +3,7 @@ from discord import app_commands
 from Assets.Utilities import *
 from Assets.VinylScraper import *
 import discord 
-import asyncio
+
 import json
 import tabulate
 import warnings
@@ -11,8 +11,9 @@ from datetime import datetime
 
 #Commented Out for Testing Purposes
 ##########################################################################################################
-warnings.filterwarnings("ignore", category=UserWarning)
-model  = "gpt-3.5-turbo-0125"
+warnings.simplefilter("ignore", UserWarning)
+#model  = "gpt-3.5-turbo-0125"
+model = "gpt-4o" #Newer More Expensive Model, Higher Accuracy
 Duplicate_Removal_Prompt = """
 Given a list of subreddit post titles about vinyl album releases, your task is to analyze these titles, 
 which are user-generated and may contain duplicates or different wordings for the same release. Your objective
@@ -22,15 +23,13 @@ Disregard exact duplicates and near-duplicates, but variations in color or editi
 be included in the processed list. Use your understanding of natural language to interpret varied expressions
 and terminologies users might use to describe the same album. If you are given an empty list, output 
 'No new releases found.' It's crucial to keep the artist's name as part of the album's description in 
-your output to ensure clarity and completeness. Organize the final result alphabetically.
+your output to ensure clarity and completeness. Organize the final result alphabetically and only include the data as csv's nothing else.
 """
 SearchArtistPrompt = """
 You are given two lists. The first list contains artists or albums. 
 The second list contains a variety of artists or albums from a different source. Your task is to compare these 
-two lists and identify any entries that appears in both.The matches may not always be exact as they are user generated
-When you find matches, output them clearly. If there are no matches, respond with "No matches found." Ensure accuracy by 
-paying close attention to the details of each entry, as there may be slight variations in how artist names or album titles are presented. 
-Use your understanding of artist names and album titles to make accurate comparisons even when faced with minor differences in spelling or formatting.
+two lists and identify any entries that appears in both.They may not match perfectly due to the variations in spelling and formatting, use your 
+understanding of natural language to identify matches. When you find matches, output them clearly as comma seperated values with the full match name string. If there are no matches, respond with ONLY "No matches found." 
 """
 
 #TODO: Make the ViewedPost.txt a JSON file so that it will pursist through github pushes
@@ -45,14 +44,66 @@ def run_discord_bot():
     
 
 
+    @client.event
+    async def DelayedLoop(Vinylchannel):
+        print("Delayed Loop Initiated")
+        PostList = "Init#1"
+        postSearchAmount = 50 #Post
+        MinutesTillSearch = 10 #Minutes
+        while True:
+            PostList = get_recent_posts(postSearchAmount)
+            #We recheck the file for the updated list of artists
+            with open('Assets/SearchParams.json', 'r') as file:
+                data = json.load(file)
+            
+            # Dump all the artist into a python list
+            all_artists = [artist for user_likes in data.values() for artist in user_likes]
+            
+            # Perform the search if there are any new post detected 
+            if PostList:
+                try:
+                    posts_without_duplicates = RemoveDuplicates(PostList, Duplicate_Removal_Prompt, model)
+                    cleaned_posts_list = convert_to_list(posts_without_duplicates)
+                    matches = SearchArtist(all_artists,cleaned_posts_list, model, SearchArtistPrompt)
+                except Exception as e:
+                    print(e)
+                    matches = "API Error. Please try again later."
+                #If there is a match, send the message to the Vinylchannel
+                if matches != "No matches found." and matches != "API Error. Please try again later.":
+                    print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+                    
+                    # Attempt to see if we can find everyone who likes the match in the JSON file and tag them
+                    matched_users = {}
+                    for user, liked_artists in data.items():
+                        matched_artists = [artist for artist in liked_artists if artist in matches]
+                        if matched_artists:
+                            matched_users[user] = matched_artists
+                    
+                    if matched_users:
+                        table_rows = [["User", "Matched Artists"]]
+                        for user, user_matches in matched_users.items():
+                            table_rows.append([f"@{user}", ", ".join(user_matches)])
+                        
+                        table = tabulate.tabulate(table_rows, headers="firstrow", tablefmt="pipe")
+                        matches = f"Hey {' '.join([f'@{user}' for user in matched_users.keys()])}, I found a match for you:\n\n```{table}```"
+                    else:
+                        matches = f"I found a match for you: {matches}"
+                    
+                    # Send the message to the Vinylchannel  # Replace with your channel ID
+                    await Vinylchannel.send(matches)
+                elif matches == "API Error. Please try again later.":
+                    print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+                    #Send the message to the Vinylchannel
+                    await Vinylchannel.send(matches)
+            else:
+                print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+            await asyncio.sleep(MinutesTillSearch * 60) #<-For some reason this can't me moved to utilities.py
     
     @client.event
     async def on_ready():
-        current = "Init#1"
-        last = "Init#2"
-        postSearchAmount = 50
-        MinutesTillSearch = 45
+        
         Vinylchannel = client.get_channel(1217119273684701354)
+        Testchannel = client.get_channel(1115817757267730533)
         print(f'We have logged in as {client.user}')
         await client.change_presence(activity=discord.Game("with your mom's record player"))
 
@@ -61,49 +112,8 @@ def run_discord_bot():
             print(f"Synced {len(synced)} commands")
         except Exception as e:
             print(e)
+        client.loop.create_task(DelayedLoop(Vinylchannel))
         
-
-        while True:
-            # Every X minutes we will check for 50 new posts
-            #TODO Remove Only call the GPT API if there are new posts to check I.E. get_recent_posts() != last
-            #Dupes_Removed = RemoveDuplicates(get_recent_posts(postSearchAmount), Duplicate_Removal_Prompt, model)
-            #Dupe_Removed_List = convert_to_list(Dupes_Removed)
-            current = get_recent_posts(postSearchAmount)
-
-            #We recheck the file for the updated list of artists
-            with open('Assets/SearchParams.json', 'r') as file:
-                data = json.load(file)
-            
-            # Dump all the artist into a python list
-            all_artists = [artist for user_likes in data.values() for artist in user_likes]
-
-            
-            # Perform the search
-            if current != last:
-                try:
-                    Dupes_Removed = RemoveDuplicates(current, Duplicate_Removal_Prompt, model)
-                    Dupe_Removed_List = convert_to_list(Dupes_Removed)
-                    matches = SearchArtist(all_artists, Dupe_Removed_List, model, SearchArtistPrompt)
-                except Exception as e:
-                    print(e)
-                    matches = "API Error. Please try again later."
-            else:
-                continue
-
-            #If matches is == to "No matches found." then we will not send a message
-            if matches != "No matches found.":
-                print(matches)
-                last = current
-                #Send the message to the Vinylchannel
-                await Vinylchannel.send(matches)
-            else:
-                print("No matches found.")
-
-            # Sleep for X minutes
-            #await asyncio.sleep(MinutesTillSearch * 60)
-            await asyncio.sleep(30)
-
-
 
     #Slash Commands
     ############################################################################################################
@@ -177,28 +187,6 @@ def run_discord_bot():
         ]
         table = tabulate(rows, headers=headers, tablefmt="pipe")
         await interaction.response.send_message(f"Here are the available commands:\n\n```{table}```")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     client.run(token)
 
