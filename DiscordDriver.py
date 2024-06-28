@@ -77,7 +77,6 @@ def run_discord_bot():
                     posts_without_duplicates = RemoveDuplicates(PostList, Duplicate_Removal_Prompt, model)
                     cleaned_posts_list = convert_to_list(posts_without_duplicates)
                     matches = SearchArtist(all_artists,cleaned_posts_list, model, SearchArtistPrompt)
-                    print(matches)
                 except Exception as e:
                     print(e)
                     matches = "API Error. Please try again later."
@@ -116,8 +115,8 @@ def run_discord_bot():
                     print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
                     #Send the message to the Vinylchannel
                     await Vinylchannel.send(matches)
-            else:
-                print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+                else:
+                    print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
             await asyncio.sleep(MinutesTillSearch * 60) #<-For some reason this can't me moved to utilities.py
     
     @client.event
