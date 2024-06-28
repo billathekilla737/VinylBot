@@ -58,7 +58,7 @@ def run_discord_bot():
     async def DelayedLoop(Vinylchannel):
         PostList = "Init#1"
         postSearchAmount = 50 #Post
-        MinutesTillSearch = 10 #Minutes
+        MinutesTillSearch = 3 #Minutes
         while True:
             try:
                 PostList = await get_recent_posts(postSearchAmount)  # Await the async function
@@ -80,7 +80,6 @@ def run_discord_bot():
                     matches = "API Error. Please try again later."
                 ############################################################################################################
                 if matches.strip() and matches not in ["No matches found.", "API Error. Please try again later."]:
-                    print(f"{matches.strip()} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
                     # Attempt to see if we can find everyone who likes the match in the JSON file and tag them
                     matched_users = {}
                     normalized_matches = normalize_string(matches)
