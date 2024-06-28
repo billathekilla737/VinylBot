@@ -12,26 +12,37 @@ from datetime import datetime
 
 #model  = "gpt-3.5-turbo-0125"
 model = "gpt-4o" #Newer More Expensive Model, Higher Accuracy
-Duplicate_Removal_Prompt = """
-Given a list of subreddit post titles about vinyl album releases, your task is to analyze these titles, 
-which are user-generated and may contain duplicates or different wordings for the same release. Your objective
-is to identify unique releases, taking special care to retain the full title of each release, including the 
-artist's name, album title, and any unique descriptors such as edition, color variant, or special edition details.
-Disregard exact duplicates and near-duplicates, but variations in color or edition are considered unique and should
-be included in the processed list. Use your understanding of natural language to interpret varied expressions
-and terminologies users might use to describe the same album. If you are given an empty list, output 
-'No new releases found.' It's crucial to keep the artist's name as part of the album's description in 
-your output to ensure clarity and completeness. Organize the final result alphabetically and only include the data as csv's nothing else.
+
+# Duplicate_Removal_Prompt = """
+# Given a list of post titles about vinyl album releases, your task is to analyze these titles, 
+# which are user-generated and may contain duplicates or different wordings for the same release. Your objective
+# is to identify unique releases, taking special care to retain the full title of each release, including the 
+# artist's name, album title, and any unique descriptors such as edition, color variant, or special edition details.
+# It is very important NOT to include near duplicates, any near duplicates should be compressed into one entry not multiple
+# lean on the side of strictness when deciding of two color variants are the same if a color repeats at all don't include it.
+# If you are given an empty list, output 'No new releases found.' It's crucial to keep the artist's name as part of the album's description in 
+# your output to ensure clarity and completeness. Organize the final result alphabetically and only include the data as csv's nothing else.
+# """
+Duplicate_Removal_Prompt = """1. **Identify Unique Releases**: Disregard exact duplicates and near-duplicates. Variations in color, edition, or special descriptors should be considered unique and included in the final list. However, each unique color or edition should only appear once, regardless of slight differences in wording.
+2. **Full Titles**: Retain the full title of each release, including artist's name, album title, and unique descriptors.
+3. **Strict Duplicate Handling**: Be strict in identifying and compressing near duplicates. If a color variant or edition repeats in any form, do not include it more than once.
+4. **Uncolored Version Inclusion**: Ensure that the uncolored version (non-special edition or color variant) of each album is included if it exists.
+5. **Duplicate Color Handling**: If a variation attribute repeats in any way in the titles, do not include it more than once in the final list. The ONLY exception is to include the uncolored version of the album if it exists. The uncolored version will not have any color attributes in the title.
+6. **Include Unique Variations**: Ensure that for each album, one unique colored variation and one uncolored version (if it exists) are included in the final list.
+7. **Output Format**: Organize the final result alphabetically by artist's name and album title. Only include the data as CSV format, with each entry on a new line.
 """
 SearchArtistPrompt = """
 You are given two lists. The first list contains artists or albums. 
 The second list contains a variety of artists or albums from a different source. Your task is to compare these 
 two lists and identify any entries that appears in both.They may not match perfectly due to the variations in spelling and formatting, use your 
-understanding of natural language to identify matches. When you find matches, output them clearly as comma seperated values with the full match name string. If there are no matches, respond with ONLY "No matches found." 
+understanding of natural language to identify matches. When you find matches, output them clearly as comma seperated values make sure to include both the artist name and any other information in the post title.
+If there are no matches, respond with ONLY "No matches found." 
 """
 
-#TODO: Make the ViewedPost.txt a JSON file so that it will pursist through github pushes
-#TODO: Make it so that when I pass the artist list to CHATGPT, the User who likes it is passed too. That way I can say "Hey @User, I found a match for you"
+#TODO: Add some sort of burst detecting for when everyone post the same thing for a few days.
+#continued...We will Keep the last post sets for three days and compare it's names the the last three days to remove repeats.
+
+
 
 def run_discord_bot():
 
@@ -66,13 +77,13 @@ def run_discord_bot():
                     posts_without_duplicates = RemoveDuplicates(PostList, Duplicate_Removal_Prompt, model)
                     cleaned_posts_list = convert_to_list(posts_without_duplicates)
                     matches = SearchArtist(all_artists,cleaned_posts_list, model, SearchArtistPrompt)
+                    print(matches)
                 except Exception as e:
                     print(e)
                     matches = "API Error. Please try again later."
                 #If there is a match, send the message to the Vinylchannel
                 if matches != "No matches found." and matches != "API Error. Please try again later.":
                     print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
-                    
                     # Attempt to see if we can find everyone who likes the match in the JSON file and tag them
                     matched_users = {}
                     for user, liked_artists in data.items():
@@ -81,9 +92,15 @@ def run_discord_bot():
                             matched_users[user] = matched_artists
                     
                     if matched_users:
-                        table_rows = [["User", "Matched Artists"]]
+                        table_rows = [["User", "Matched Artists", "Variation"]]
                         for user, user_matches in matched_users.items():
-                            table_rows.append([f"@{user}", ", ".join(user_matches)])
+                            variations = []
+                            for artist in user_matches:
+                                for line in matches.split(','):
+                                    if artist in line:
+                                        variations.append(line.strip())
+                            table_rows.append([f"@{user}", ", ".join(user_matches), "\n".join(variations)])
+                            table_rows.append(["", "", ""])  # Add an empty row for spacing
                         
                         table = tabulate.tabulate(table_rows, headers="firstrow", tablefmt="pipe")
                         matches = f"Hey {' '.join([f'@{user}' for user in matched_users.keys()])}, I found a match for you:\n\n```{table}```"
@@ -92,6 +109,9 @@ def run_discord_bot():
                     
                     # Send the message to the Vinylchannel  # Replace with your channel ID
                     await Vinylchannel.send(matches)
+                    print(matches)
+
+                    #*****************
                 elif matches == "API Error. Please try again later.":
                     print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
                     #Send the message to the Vinylchannel
