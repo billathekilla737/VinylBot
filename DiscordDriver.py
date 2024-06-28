@@ -58,7 +58,7 @@ def run_discord_bot():
     async def DelayedLoop(Vinylchannel):
         PostList = "Init#1"
         postSearchAmount = 50 #Post
-        MinutesTillSearch = 3 #Minutes
+        MinutesTillSearch = 2 #Minutes
         while True:
             try:
                 PostList = await get_recent_posts(postSearchAmount)  # Await the async function
