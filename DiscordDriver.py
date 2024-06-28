@@ -6,6 +6,7 @@ import discord
 import json
 import tabulate
 from datetime import datetime
+import asyncio
 
 #Commented Out for Testing Purposes
 ##########################################################################################################
@@ -64,14 +65,11 @@ def run_discord_bot():
             except Exception as e:
                 print(e)
                 PostList = []
-
             with open('Assets/SearchParams.json', 'r') as file:
                 data = json.load(file)
-            
             # Dump all the artist into a python list
             all_artists = [artist for user_likes in data.values() for artist in user_likes]
-            
-            # Perform the search if there are any new post detected 
+             
             if PostList:
                 try:
                     posts_without_duplicates = RemoveDuplicates(PostList, Duplicate_Removal_Prompt, model)
@@ -80,13 +78,14 @@ def run_discord_bot():
                 except Exception as e:
                     print(e)
                     matches = "API Error. Please try again later."
-                #If there is a match, send the message to the Vinylchannel
-                if matches != "No matches found." and matches != "API Error. Please try again later.":
-                    print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+                ############################################################################################################
+                if matches.strip() and matches not in ["No matches found.", "API Error. Please try again later."]:
+                    print(f"{matches.strip()} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
                     # Attempt to see if we can find everyone who likes the match in the JSON file and tag them
                     matched_users = {}
+                    normalized_matches = normalize_string(matches)
                     for user, liked_artists in data.items():
-                        matched_artists = [artist for artist in liked_artists if artist in matches]
+                        matched_artists = [artist for artist in liked_artists if normalize_string(artist) in normalized_matches]
                         if matched_artists:
                             matched_users[user] = matched_artists
                     
@@ -96,7 +95,7 @@ def run_discord_bot():
                             variations = []
                             for artist in user_matches:
                                 for line in matches.split(','):
-                                    if artist in line:
+                                    if normalize_string(artist) in normalize_string(line):
                                         variations.append(line.strip())
                             table_rows.append([f"@{user}", ", ".join(user_matches), "\n".join(variations)])
                             table_rows.append(["", "", ""])  # Add an empty row for spacing
@@ -106,17 +105,13 @@ def run_discord_bot():
                     else:
                         matches = f"I found a match for you: {matches}"
                     
-                    # Send the message to the Vinylchannel  # Replace with your channel ID
+                    # Send the message to the Vinylchannel
                     await Vinylchannel.send(matches)
-                    print(matches)
-
-                    #*****************
-                elif matches == "API Error. Please try again later.":
-                    print(f"{matches} at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
-                    #Send the message to the Vinylchannel
-                    await Vinylchannel.send(matches)
-                else:
-                    print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
+                    print(f"Matches are: {matches}")
+                    ############################################################################################################
+                
+            else:
+                print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
             await asyncio.sleep(MinutesTillSearch * 60) #<-For some reason this can't me moved to utilities.py
     
     @client.event
@@ -124,7 +119,7 @@ def run_discord_bot():
         
         Vinylchannel = client.get_channel(1217119273684701354)
         Testchannel = client.get_channel(1115817757267730533)
-        Channel = Vinylchannel
+        Channel = Testchannel
         print(f'We have logged in as {client.user}')
         await client.change_presence(activity=discord.Game("with your mom's record player"))
 

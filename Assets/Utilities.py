@@ -1,4 +1,4 @@
-import asyncio
+import regex as re
 def Parse_Private():
     try:
         with open(r"Assets/Keys/Private.txt", "r") as tokenFile:
@@ -69,3 +69,8 @@ def preprocess_input(posts):
 
 def convert_to_list(multi_line_string):
     return multi_line_string.split('\n')
+
+
+
+def normalize_string(s):
+    return re.sub(r'[^a-z0-9\s]', '', s.lower())
