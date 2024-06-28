@@ -118,7 +118,7 @@ def run_discord_bot():
         
         Vinylchannel = client.get_channel(1217119273684701354)
         Testchannel = client.get_channel(1115817757267730533)
-        Channel = Testchannel
+        Channel = Vinylchannel
         print(f'We have logged in as {client.user}')
         await client.change_presence(activity=discord.Game("with your mom's record player"))
 
