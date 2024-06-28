@@ -107,7 +107,6 @@ def run_discord_bot():
                     
                     # Send the message to the Vinylchannel
                     await Vinylchannel.send(matches)
-                    print(f"Matches are: {matches}")
                     ############################################################################################################
                 
             else:
