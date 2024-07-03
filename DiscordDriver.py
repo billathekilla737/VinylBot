@@ -5,7 +5,6 @@ from Assets.VinylScraper import *
 import discord 
 import json
 import tabulate
-from datetime import datetime
 import asyncio
 
 #Commented Out for Testing Purposes
@@ -24,13 +23,15 @@ model = "gpt-4o" #Newer More Expensive Model, Higher Accuracy
 # If you are given an empty list, output 'No new releases found.' It's crucial to keep the artist's name as part of the album's description in 
 # your output to ensure clarity and completeness. Organize the final result alphabetically and only include the data as csv's nothing else.
 # """
-Duplicate_Removal_Prompt = """1. **Identify Unique Releases**: Disregard exact duplicates and near-duplicates. Variations in color, edition, or special descriptors should be considered unique and included in the final list. However, each unique color or edition should only appear once, regardless of slight differences in wording.
+Duplicate_Removal_Prompt = """
+1. **Identify Unique Releases**: Disregard exact duplicates and near-duplicates. Variations in color, edition, or special descriptors should be considered unique and included in the final list. However, each unique color or edition should only appear once, regardless of slight differences in wording.
 2. **Full Titles**: Retain the full title of each release, including artist's name, album title, and unique descriptors.
 3. **Strict Duplicate Handling**: Be strict in identifying and compressing near duplicates. If a color variant or edition repeats in any form, do not include it more than once.
 4. **Uncolored Version Inclusion**: Ensure that the uncolored version (non-special edition or color variant) of each album is included if it exists.
 5. **Duplicate Color Handling**: If a variation attribute repeats in any way in the titles, do not include it more than once in the final list. The ONLY exception is to include the uncolored version of the album if it exists. The uncolored version will not have any color attributes in the title.
 6. **Include Unique Variations**: Ensure that for each album, one unique colored variation and one uncolored version (if it exists) are included in the final list.
-7. **Output Format**: Organize the final result alphabetically by artist's name and album title. Only include the data as CSV format, with each entry on a new line.
+7. **Check For Repeats** against from the history list provided to make sure they are not being repeated.
+8. **Output Format**: Organize the final result alphabetically by artist's name and album title. Only include the data as CSV format, with each entry on a new line.
 """
 SearchArtistPrompt = """
 You are given two lists. The first list contains artists or albums. 
@@ -57,14 +58,17 @@ def run_discord_bot():
     @client.event
     async def DelayedLoop(Vinylchannel):
         PostList = "Init#1"
-        postSearchAmount = 50 #Post
+        postSearchAmount = 30 #Post
         MinutesTillSearch = 2 #Minutes
+        PostHistory = extract_titles(Read_Variation_Data())
         while True:
             try:
+                #TODO: Mod Try Except to the get_recent_posts function to clean up the code
                 PostList = await get_recent_posts(postSearchAmount)  # Await the async function
             except Exception as e:
                 print(e)
                 PostList = []
+
             with open('Assets/SearchParams.json', 'r') as file:
                 data = json.load(file)
             # Dump all the artist into a python list
@@ -72,13 +76,16 @@ def run_discord_bot():
              
             if PostList:
                 try:
-                    posts_without_duplicates = RemoveDuplicates(PostList, Duplicate_Removal_Prompt, model)
+                    #TODO: We are going to cross refence  the new post found with the last week of posts to remove duplicates. The 
+                    #Grab just the titles from the post list
+                    posts_without_duplicates = RemoveDuplicates(preprocess_input(PostList), Duplicate_Removal_Prompt, model, PostHistory)
                     cleaned_posts_list = convert_to_list(posts_without_duplicates)
                     matches = SearchArtist(all_artists,cleaned_posts_list, model, SearchArtistPrompt)
+                    Store_Varation_Data(matches)
                 except Exception as e:
                     print(e)
                     matches = "API Error. Please try again later."
-                ############################################################################################################
+                    
                 if matches.strip() and matches not in ["No matches found.", "API Error. Please try again later."]:
                     # Attempt to see if we can find everyone who likes the match in the JSON file and tag them
                     matched_users = {}
@@ -112,9 +119,16 @@ def run_discord_bot():
                 print(f"No matches found. at {datetime.now().strftime('%I:%M:%S %p')} waiting {MinutesTillSearch} minutes")
             await asyncio.sleep(MinutesTillSearch * 60) #<-For some reason this can't me moved to utilities.py
     
+    async def HistoryCleaner(Keep_For):
+        #Every 12Hr we will clean the history list of anything older than our Keep_For variable
+        while True:
+            CleanedItems = Remove_Variation_History(Keep_For)
+            print(f"Cleaned Items: {CleanedItems}")
+            await asyncio.sleep(60*60*12) #12Hr
+    
     @client.event
     async def on_ready():
-        
+        Keep_For = 7 #Days
         Vinylchannel = client.get_channel(1217119273684701354)
         Testchannel = client.get_channel(1115817757267730533)
         Channel = Vinylchannel
@@ -127,6 +141,8 @@ def run_discord_bot():
         except Exception as e:
             print(e)
         client.loop.create_task(DelayedLoop(Channel))
+        #TODO: Make another loop that runs once every 12hr to clear the anything older than 7 days from the history list.
+        client.loop.create_task(HistoryCleaner(Keep_For))
         
 
     #Slash Commands

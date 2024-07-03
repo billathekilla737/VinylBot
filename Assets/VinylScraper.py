@@ -41,14 +41,15 @@ async def get_recent_posts(amount):
         return postList
 
 
-def RemoveDuplicates(posts, GPT_Prompt, model):
+def RemoveDuplicates(posts, GPT_Prompt, model, History):
     # Preprocess the list into a string of titles
     #print('Posts:\n' + str(posts))
-    preprocessed_titles = preprocess_input(posts)
+    CurrentandHistory = str(posts) + str(History)
+    print('Current and History:\n' + CurrentandHistory)
     
     
     # Combine your task description with the preprocessed titles
-    full_prompt = f"{GPT_Prompt}\n\nSubreddit Posts:\n{preprocessed_titles}\n\n Only Return Processed list as 'Processed List:'"
+    full_prompt = f"{GPT_Prompt}\n\nUser Generated Post:\n{CurrentandHistory}\n\n  Only Return Processed list as 'Processed List:'"
     # Call GPT-3.5 Turbo
     response = openai.ChatCompletion.create(
         model=model,
